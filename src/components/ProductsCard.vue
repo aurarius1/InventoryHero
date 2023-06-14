@@ -14,7 +14,7 @@
                     </v-list-item>
                     <v-list-item density="compact" >
                         <v-list-item-subtitle>
-                            <v-icon @click="increaseAmount(id)" class="me-3" icon="mdi-plus"/>
+                            <v-icon @click="increaseAmount(id, box_id, room_id)" class="me-3" icon="mdi-plus"/>
                         </v-list-item-subtitle>
                     </v-list-item>
                     <v-list-item density="compact">
@@ -109,11 +109,11 @@ import ProductsDetailModal from "@/modals/ProductsDetailModal.vue";
           {
               console.log("Showing all products " + cardID);
           },
-          increaseAmount: function(cardId)
+          increaseAmount: function(cardId, boxId, roomId)
           {
-              DB_SB_increase_product_amount(cardId) .then(() => {
+              DB_SB_increase_product_amount(cardId, boxId, roomId) .then(() => {
         
-                return DB_SB_get_product(cardId);
+                return DB_SB_get_product(cardId, boxId, roomId);
             }) .then(updatedProduct => {
                 this.updatedAmount = updatedProduct.amount;
                 console.log("Updated product:", updatedProduct);

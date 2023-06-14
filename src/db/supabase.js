@@ -116,9 +116,9 @@ export async function DB_SB_get_all_products_per_storage_location(room_id, box_i
 }
 
 
-export async function DB_SB_increase_product_amount(productId) {
+export async function DB_SB_increase_product_amount(productId, boxId, roomId) {
 
-    const { data, error } = await supabase.rpc("increase_product_amount", { productid:productId });
+    const { data, error } = await supabase.rpc("increase_product_amount", { productid:productId, boxid: boxId, roomid: roomId});
   
     if (error) {
       console.log("Error occurred:", error.message);
@@ -141,20 +141,25 @@ export async function DB_SB_increase_product_amount(productId) {
   }
   
 
-  export async function DB_SB_get_product(productId, user=undefined) {
-    if(user === undefined)
-        user = await getUser();
-
-    const { data, error } = await supabase.from("products").select("*").eq("username", user.username).eq("id", productId).single();
+  export async function DB_SB_get_product(productId, boxId, roomId) {
+  
+  
+    const { data, error } = await supabase
+      .from("MappingProduct")
+      .select("*")
+      .eq("product_id", productId)
+      .eq("box_id", boxId)
+      .eq("room_id", roomId)
+      .single();
   
     if (error) {
-      console.log("Error :", error.message);
+      console.log("Error:", error.message);
       return null;
     }
   
     return data;
   }
-
+  
 
 export async function DB_SB_get_boxes(user, room = -1){
 
@@ -220,14 +225,33 @@ export async function DB_SB_add_product(product) {
     
     let data = {
         name: product.name,
-        box_id: box_id,
-        room_id: room_id,
         amount: product.amount,
         username: user.username,
         starred: product.starred
     }
 
-    await supabase.from('products').insert(data);
+    console.log(data)
+    let {data:insertedProduct, error} = await supabase.from('products').insert(data).select()
+
+    console.log(error);
+
+   
+
+    let productId = insertedProduct[0].id;
+
+   let amount = product.amount;
+
+
+    let { error: mapError } = await supabase
+    .from('MappingProduct')
+    .insert([
+    { product_id: productId, box_id: box_id, room_id: room_id, amount: amount },
+    ]);
+
+    if (mapError) {
+    console.error("Error mapping product:", mapError);
+    }
+
 }
 
 export async function DB_SB_add_box(box) {
@@ -255,6 +279,8 @@ export async function DB_SB_add_room(room) {
     }
     await supabase.from('rooms').insert(data);
 }
+
+
 
 async function DB_SB_get_id_of_box(box_name) {
     const user = await getUser();
